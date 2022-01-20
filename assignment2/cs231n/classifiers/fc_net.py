@@ -74,7 +74,10 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        layer_dims = np.hstack((input_dim, hidden_dims, num_classes))
+        for i in range(self.num_layers):
+            self.params['W' + str(i + 1)] = np.random.normal(0, weight_scale, (layer_dims[i], layer_dims[i + 1]))
+            self.params['b' + str(i + 1)] = np.zeros(layer_dims[i + 1])
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -148,7 +151,16 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        x = X
+        caches = []
+        for i in range(self.num_layers - 1):
+            W = self.params['W' + str(i + 1)]
+            b = self.params['b' + str(i + 1)]
+            out, cache = affine_relu_forward(x, W, b)
+            caches.append(cache)
+            x = out
+        scores, cache = affine_forward(x, self.params['W' + str(self.num_layers)], self.params['b' + str(self.num_layers)])
+        caches.append(cache)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -175,7 +187,19 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        loss, dout = softmax_loss(scores, y)
+        for i in range(self.num_layers):
+            W = self.params['W' + str(i + 1)]
+            loss += 0.5 * self.reg * np.sum(W * W)
+        dout, dw, db = affine_backward(dout, caches[self.num_layers - 1])
+        dw += self.reg * self.params['W' + str(self.num_layers)]
+        grads['W' + str(self.num_layers)] = dw
+        grads['b' + str(self.num_layers)] = db
+        for i in range(self.num_layers - 2, -1, -1):
+            dout, dw, db = affine_relu_backward(dout, caches[i])
+            dw += self.reg * self.params['W' + str(i + 1)]
+            grads['W' + str(i + 1)] = dw
+            grads['b' + str(i + 1)] = db
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
