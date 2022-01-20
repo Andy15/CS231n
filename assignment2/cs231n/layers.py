@@ -25,7 +25,7 @@ def affine_forward(x, w, b):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    out = np.dot(np.reshape(x, (x.shape[0], -1)), w) + b
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -57,7 +57,9 @@ def affine_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    dx = np.reshape(np.dot(dout, w.T), x.shape)
+    dw = np.dot(np.reshape(x, (x.shape[0], -1)).T, dout)
+    db = np.dot(dout.T, np.ones(x.shape[0]))
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -82,7 +84,7 @@ def relu_forward(x):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    out = np.maximum(0, x)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -108,7 +110,10 @@ def relu_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    dx = x
+    dx[dx < 0] = 0
+    dx[dx > 0] = 1
+    dx *= dout
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -137,7 +142,13 @@ def softmax_loss(x, y):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    num_classes = x.shape[1]
+    num_train = x.shape[0]
+    scores = x - np.max(x, axis = 1).reshape(num_train, 1)
+    scores = np.exp(scores) / np.sum(np.exp(scores), axis = 1).reshape(num_train, 1)
+    loss = -np.sum(np.log(scores[np.arange(num_train), y])) / num_train
+    scores[np.arange(num_train), y] -= 1
+    dx = scores / num_train
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
