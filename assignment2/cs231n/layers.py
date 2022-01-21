@@ -227,7 +227,14 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        mean = np.mean(x, axis = 0)
+        var = np.var(x, axis = 0)
+        std = np.sqrt(var + eps)
+        x_norm = (x - mean) / std
+        out = gamma * x_norm + beta
+        running_mean = momentum * running_mean + (1 - momentum) * mean
+        running_var = momentum * running_var + (1 - momentum) * var
+        cache = (x, gamma, mean, std, x_norm)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
@@ -242,7 +249,8 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        x_norm = (x - running_mean) / np.sqrt(running_var + eps)
+        out = gamma * x_norm + beta
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
@@ -283,7 +291,11 @@ def batchnorm_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N, D = dout.shape
+    x, gamma, mean, std, x_norm = cache
+    dgamma = np.sum(dout * x_norm, axis = 0)
+    dbeta = np.sum(dout, axis = 0)
+    dx = gamma * dout / std - (1 / N) * (x - mean) * np.ones((N, D)) / std ** 3 * np.sum(dout * gamma * (x - mean), axis = 0) - (1 / N) * np.ones((N, D)) * np.sum(gamma * dout / std - (1 / N) * (x - mean) * np.ones((N, D)) / std ** 3 * np.sum(gamma * dout * (x - mean), axis = 0), axis = 0)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -317,7 +329,11 @@ def batchnorm_backward_alt(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N = dout.shape[0]
+    x, gamma, mean, std, x_norm = cache
+    dgamma = np.sum(dout * x_norm, axis = 0)
+    dbeta = np.sum(dout, axis = 0)
+    dx = gamma * dout / std + (1 / N) * np.sum(-gamma * dout / std, axis = 0) + (2 / N) * (x - mean) * np.sum(-(1 / 2) * gamma * dout * (x - mean) / std ** 3, axis = 0)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -362,7 +378,12 @@ def layernorm_forward(x, gamma, beta, ln_param):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    mean = np.mean(x, axis = 1, keepdims = True)
+    var = np.var(x, axis = 1, keepdims = True)
+    std = np.sqrt(var + eps)
+    x_norm = (x - mean) / std
+    out = x_norm * gamma + beta
+    cache = (x, gamma, mean, var, std, x_norm)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -396,7 +417,14 @@ def layernorm_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    x, gamma, mean, var, std, x_norm = cache
+    D = x.shape[1]
+    dgamma = np.sum(dout * x_norm, axis = 0)
+    dbeta = np.sum(dout, axis = 0)
+    dx_norm = gamma * dout
+    dvar = np.sum(-(1 / 2) * dx_norm * (x - mean) * var ** -1.5, axis = 1)
+    dmean = np.sum(-dx_norm * std, axis = 1) + dvar * np.sum(-(2 / D) * (x - mean), axis = 1)
+    dx = dx_norm / std + (2 / D) * np.reshape(dvar, (-1, 1)) * (x - mean) + np.reshape(dmean, (-1, 1)) / D
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
