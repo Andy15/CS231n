@@ -38,7 +38,9 @@ class PositionalEncoding(nn.Module):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        P = torch.arange(0, max_len).unsqueeze(1) * 10000 ** (-torch.arange(0, embed_dim, 2) / embed_dim)
+        pe[:, :, 0::2] = torch.sin(P)
+        pe[:, :, 1::2] = torch.cos(P)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -70,7 +72,7 @@ class PositionalEncoding(nn.Module):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        output = self.dropout(x + self.pe[:, : S, :])
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -126,7 +128,8 @@ class MultiHeadAttention(nn.Module):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        self.num_heads = num_heads
+        self.dropout = nn.Dropout(dropout)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -174,7 +177,14 @@ class MultiHeadAttention(nn.Module):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        H = self.num_heads
+        Q = self.query(query).view(N, S, H, D // H).permute(0, 2, 1, 3)
+        K = self.key(key).view(N, T, H, D // H).permute(0, 2, 1, 3)
+        V = self.value(value).view(N, T, H, D // H).permute(0, 2, 1, 3)
+        E = Q.matmul(K.transpose(2, 3)) / torch.sqrt(torch.Tensor([D / H]))
+        if attn_mask is not None:
+            E = E.masked_fill(attn_mask == False, -float('inf'))
+        output = self.proj(torch.matmul(self.dropout(torch.softmax(E, dim = -1)), V).permute(0, 2, 1, 3).contiguous().view(N, S, D))
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
